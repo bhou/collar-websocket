@@ -47,7 +47,7 @@ class Client {
     if (msg === 'unauthorized') this.unauth = listener;
   }
 
-  emit(msg, data = {}) {
+  emit(msg, data) {
     this.socket.emit(msg, data);
   }
 }

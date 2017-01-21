@@ -37,10 +37,25 @@ wss.on('connect', (so) => {
       wss.of('/collector').emit('downstream', data);
     });
   }
+
+  if (so.ns === '/echo') {
+    so.on('req', (data) => {
+      so.emit('res', data);
+    });
+  }
 });
 
+const client = new Client('ws://localhost:8080/echo', 'testClient', 'testSecret');
 
+client.on('authorized', (so) => {
+  so.on('res', (data) => {
+    console.log('echo', data);
+  })
+  so.emit('req', { greeting: 'Hello!' })
+})
+client.connect();
 
+/*
 // collector
 const client1 = new Client('ws://localhost:8080/collector', 'testClient1', 'testSecret');
 
@@ -114,4 +129,4 @@ client4.on('unauthorized', (data) => {
 });
 
 client4.connect();
-
+*/

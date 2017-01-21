@@ -1,6 +1,5 @@
 module.exports = {
-  CLIENT_ID: '_id_',
-  MSG_TYPE: '_tp_',
-  TO: '_to_',
-  TO_NS: '_to_ns_',
+  CLIENT_ID: 'id',
+  MSG_TYPE: 'type',
+  DATA: 'data',
 }

@@ -30,6 +30,35 @@ exports['test socket'] = {
     client.connect();
   },
 
+  "echo primitive data test": (test) => {
+    const express = require('express');
+    const app = express();
+
+    const server = app.listen(8080, function () {});
+
+    const wss = new Server(server);
+
+    wss.on('connect', (so) => {
+      so.on('req', (data) => {
+        so.emit('res', data); // echo
+      })
+    });
+
+    const client = new Client('ws://localhost:8080');
+    client.on('authorized', (so) => {
+      so.on('res', (data) => {
+        test.equal(data, 'hello!');
+        so.close();
+        server.close();
+        test.done();
+      });
+
+      so.emit('req', 'hello!');
+    });
+    client.connect();
+  },
+
+
   "auth test": (test) => {
     const express = require('express');
     const app = express();

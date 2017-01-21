@@ -35,10 +35,9 @@ class Socket {
 
   handle(message) {
     try {
-      let data = JSON.parse(message);
-      let type = data[Constants.MSG_TYPE];
-      delete data[Constants.MSG_TYPE];
-      delete data[Constants.CLIENT_ID];
+      let payload = JSON.parse(message);
+      let type = payload[Constants.MSG_TYPE];
+      let data = payload[Constants.DATA];
       let ls = this.listeners.get(type);
       if (!ls) return;
       ls.forEach(l => {
@@ -50,10 +49,12 @@ class Socket {
     }
   }
 
-  emit(msg, data = {}) {
-    data[Constants.MSG_TYPE] = msg;
-    data[Constants.CLIENT_ID] = this.clientId;
-    this.conn.sendUTF(JSON.stringify(data));
+  emit(msg, data) {
+    let payload = {};
+    payload[Constants.MSG_TYPE] = msg;
+    payload[Constants.CLIENT_ID] = this.clientId;
+    payload[Constants.DATA] = data;
+    this.conn.sendUTF(JSON.stringify(payload));
   }
 
   close() {
