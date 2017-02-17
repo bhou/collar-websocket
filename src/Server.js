@@ -66,7 +66,6 @@ class Server {
     });
   }
 
-
   onAuth(auth) {
     this.auth = auth;
   }

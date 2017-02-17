@@ -2,7 +2,7 @@ const WebSocketClient = require('websocket').client;
 const Socket = require('./Socket');
 
 class Client {
-  constructor(url, clientId, clientSecret) {
+  constructor(url, clientId, clientSecret, retryTimeout) {
     if (typeof url === 'string') {
       this.url = url;
       this.clientId = clientId;
@@ -13,26 +13,41 @@ class Client {
       this.clientId = opt.clientId;
       this.clientSecret = opt.clientSecret;
     }
+    this.retryTimeout = retryTimeout || 5000;
+
 
     this.client = new WebSocketClient();
     this.listeners = new Map();
     this.socket = null;
-    this.auth = null;
-    this.unauth = null;
+
+    this.auth = null; // callback when auth is done
+    this.unauth = null; // callback when auth failed
+    this.retry = null;  // callback when retry connection
+
+    this.connected = false;
   }
 
   connect() {
-    this.client.connect(this.url);
+    this.connected = false;
 
     this.client.on('connect', (conn) => {
       this.socket = new Socket(this.clientId, conn);
 
       this.socket.on('authorized', () => {
-        this.auth(this.socket);
+        this.connected = true;
+        if (this.auth) this.auth(this.socket);
       });
 
       this.socket.on('unauthorized', () => {
-        this.unauth();
+        this.connected = false;
+        if (this.unauth) this.unauth();
+      });
+
+      this.socket.on('close', (reasonCode, description) => {
+        setTimeout(() => {
+          if (this.retry) this.retry();
+          this.doConnect();
+        }, this.retryTimeout);
       });
 
       this.emit('authentication', {
@@ -40,11 +55,21 @@ class Client {
         clientSecret: this.clientSecret,
       });
     });
+
+    this.doConnect();
+  }
+
+  doConnect() {
+    if (this.connected) {
+      return;
+    }
+    this.client.connect(this.url);
   }
 
   on(msg, listener) {
     if (msg === 'authorized') this.auth = listener;
     if (msg === 'unauthorized') this.unauth = listener;
+    if (msg === 'retry') this.retry = listener;
   }
 
   emit(msg, data) {

@@ -112,5 +112,79 @@ exports['test socket'] = {
       test.done();
     });
     client.connect();
+  },
+
+  "test retry when unauth": (test) => {
+    const express = require('express');
+    const app = express();
+    const port = 8080;
+    const server = app.listen(port, function () {});
+    const wss = new Server(server);
+    wss.onAuth((id, secret, done) => {
+      if (id === 'test' && secret === 'test') {
+        return done(null, {id});
+      }
+      done(new Error('unauthorized'));
+    });
+    wss.on('connect', (so) => {
+    });
+
+    const client = new Client(`ws://localhost:${port}`, 'test1', 'test', 1000);
+    client.on('authorized', (so) => {
+    });
+    client.on('unauthorized', (so) => {
+    });
+    let retry = 0;
+    client.on('retry', () => {
+      retry++;
+      console.log(`retry connection ${retry}`);
+    });
+    client.connect();
+
+    setTimeout(() => {
+      server.close(() => {
+        test.ok(retry > 0);
+        test.done();
+      })
+    }, 3000);
+  },
+
+  "test retry when close": (test) => {
+    const express = require('express');
+    const app = express();
+    const port = 8081;
+    const server = app.listen(port, function () {});
+    const wss = new Server(server);
+    wss.onAuth((id, secret, done) => {
+      if (id === 'test' && secret === 'test') {
+        return done(null, {id});
+      }
+      done(new Error('unauthorized'));
+    });
+    wss.on('connect', (so) => {
+      setTimeout(() => {
+        so.close(500, 'Internal Error');
+      }, 1000);
+    });
+
+    const client = new Client(`ws://localhost:${port}`, 'test', 'test', 1000);
+    client.on('authorized', (so) => {
+    });
+    client.on('unauthorized', (so) => {
+    });
+    let retry = 0;
+    client.on('retry', () => {
+      retry++;
+      console.log(`retry connection ${retry}`);
+    });
+    client.connect();
+
+    setTimeout(() => {
+      server.close(() => {
+        test.ok(retry > 0);
+        test.done();
+      });
+    }, 3000);
   }
-}
+
+};

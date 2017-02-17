@@ -27,6 +27,11 @@ class Socket {
   }
 
   on(msg, listener) {
+    if (msg === 'close') {
+      this.conn.on('close', listener);
+      return;
+    }
+
     if (!this.listeners.has(msg)) {
       this.listeners.set(msg, []);
     }
