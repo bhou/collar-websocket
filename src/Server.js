@@ -5,11 +5,15 @@ const Socket = require('./Socket');
 const WebSocketServer = WebSocket.server;
 
 class Server {
-  constructor(server) {
-    this.wss = new WebSocketServer({
+  constructor(server, options = {}) {
+    let option = Object.assign({
       httpServer: server,
       autoAcceptConnections: false,
-    });
+      maxReceivedFrameSize: 1000000, // 1M
+      maxReceivedMessageSize: 10000000, // 10M
+    }, options);
+
+    this.wss = new WebSocketServer(option);
 
     this.nss = new Map();
     this.sockets = new Map();

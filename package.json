@@ -1,6 +1,6 @@
 {
   "name": "collar-websocket",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "websocket for collarjs",
   "main": "./lib/index.js",
   "scripts": {

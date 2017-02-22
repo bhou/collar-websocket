@@ -20,6 +20,7 @@ exports['test socket'] = {
     client.on('authorized', (so) => {
       so.on('res', (data) => {
         test.equal(data.greeting, 'Hello World!');
+        client.toggleRetry(false);
         so.close();
         server.close();
         test.done();
@@ -27,6 +28,7 @@ exports['test socket'] = {
 
       so.emit('req', {greeting: 'Hello World!'});
     });
+
     client.connect();
   },
 
@@ -48,6 +50,7 @@ exports['test socket'] = {
     client.on('authorized', (so) => {
       so.on('res', (data) => {
         test.equal(data, 'hello!');
+        client.toggleRetry(false);
         so.close();
         server.close();
         test.done();
@@ -57,7 +60,6 @@ exports['test socket'] = {
     });
     client.connect();
   },
-
 
   "auth test": (test) => {
     const express = require('express');
@@ -77,6 +79,7 @@ exports['test socket'] = {
 
     const client = new Client('ws://localhost:8080', 'test', 'test');
     client.on('authorized', (so) => {
+      client.toggleRetry(false);
       so.close();
       server.close();
       test.done();
@@ -99,15 +102,16 @@ exports['test socket'] = {
       test.equal(so.clientId, 'test');
     });
 
-
     const client = new Client('ws://localhost:8080', 'test1', 'test');
     client.on('authorized', (so) => {
       test.fail();
+      client.toggleRetry(false);
       so.close();
       server.close();
       test.done();
     });
     client.on('unauthorized', (so) => {
+      client.toggleRetry(false);
       server.close();
       test.done();
     });
@@ -129,7 +133,7 @@ exports['test socket'] = {
     wss.on('connect', (so) => {
     });
 
-    const client = new Client(`ws://localhost:${port}`, 'test1', 'test', 1000);
+    const client = new Client(`ws://localhost:${port}`, 'test1', 'test', 1000, 1);
     client.on('authorized', (so) => {
     });
     client.on('unauthorized', (so) => {
@@ -153,7 +157,8 @@ exports['test socket'] = {
     const express = require('express');
     const app = express();
     const port = 8081;
-    const server = app.listen(port, function () {});
+    const server = app.listen(port, function () {
+    });
     const wss = new Server(server);
     wss.onAuth((id, secret, done) => {
       if (id === 'test' && secret === 'test') {
@@ -167,7 +172,7 @@ exports['test socket'] = {
       }, 1000);
     });
 
-    const client = new Client(`ws://localhost:${port}`, 'test', 'test', 1000);
+    const client = new Client(`ws://localhost:${port}`, 'test', 'test', 1000, 1);
     client.on('authorized', (so) => {
     });
     client.on('unauthorized', (so) => {
@@ -186,5 +191,4 @@ exports['test socket'] = {
       });
     }, 3000);
   }
-
 };

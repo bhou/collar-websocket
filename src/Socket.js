@@ -2,10 +2,22 @@ const Constants = require('./Constants');
 
 class Socket {
   constructor(clientId, conn, ns) {
+    this.reset(clientId, conn, ns);
+  }
+
+  setClientId(id) {
+    this.clientId = id;
+  }
+
+  reset(clientId, conn, ns) {
     this.clientId = clientId;
     this.clientInfo = null;
     this.conn = conn;
     this.ns = ns;
+
+    this.closeHandler = null; // on close handler
+
+    this.connected = true;
 
     this.listeners = new Map();
 
@@ -16,10 +28,11 @@ class Socket {
         console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');
       }
     });
-  }
 
-  setClientId(id) {
-    this.clientId = id;
+    this.conn.on('close', (reasonCode, description) => {
+      this.conncted = false;
+      if (this.closeHandler) this.closeHandler();
+    });
   }
 
   setClientInfo(info) {
@@ -28,7 +41,7 @@ class Socket {
 
   on(msg, listener) {
     if (msg === 'close') {
-      this.conn.on('close', listener);
+      this.closeHandler = listener;
       return;
     }
 
@@ -55,6 +68,10 @@ class Socket {
   }
 
   emit(msg, data) {
+    if (!this.connected) {
+      return;
+    }
+
     let payload = {};
     payload[Constants.MSG_TYPE] = msg;
     payload[Constants.CLIENT_ID] = this.clientId;
