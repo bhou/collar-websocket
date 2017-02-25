@@ -11,6 +11,13 @@ class Namespace {
     this.sockets.set(so.clientId, so);
   }
 
+  removeSocket(so) {
+    let clientId = so.clientId;
+    if (this.sockets.has(clientId)) {
+      this.sockets.delete(clientId);
+    }
+  }
+
   emit(msg, data) {
     for (let so of this.sockets.values()) {
       so.emit(msg, data);

@@ -72,6 +72,12 @@ class Server {
           so.emit('authorized');
         });
       });
+
+      so.on('close', () => {
+        let pathname = url.parse(conn.upgradeReq.url).pathname;
+        let ns = this.of(pathname);
+        ns.removeSocket(so);
+      })
     });
   }
 
