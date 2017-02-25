@@ -21,11 +21,11 @@ class Socket {
 
     this.listeners = new Map();
 
-    this.conn.on('message', (message) => {
-      if (message.type === 'utf8') {
-        this.handle(message.utf8Data);
-      } else if (message.type === 'binary') {
-        console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');
+    this.conn.on('message', (message, flags) => {
+      if (!flags.binary) {
+        this.handle(message);
+      } else {
+        console.log('Received Binary Message of ' + message.length + ' bytes');
       }
     });
 
@@ -76,7 +76,7 @@ class Socket {
     payload[Constants.MSG_TYPE] = msg;
     payload[Constants.CLIENT_ID] = this.clientId;
     payload[Constants.DATA] = data;
-    this.conn.sendUTF(JSON.stringify(payload));
+    this.conn.send(JSON.stringify(payload));
   }
 
   close() {

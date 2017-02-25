@@ -1,16 +1,37 @@
-const WebSocket = require('websocket');
+const jwt = require('jsonwebtoken');
+const url = require('url');
+const WebSocket = require('ws');
 const Namespace = require('./Namespace');
 const Socket = require('./Socket');
 
-const WebSocketServer = WebSocket.server;
+
+const WebSocketServer = WebSocket.Server;
 
 class Server {
   constructor(server, options = {}) {
+    let secretKey = options.secretKey || 'default-secret-key-bh';
     let option = Object.assign({
-      httpServer: server,
+      server: server,
+      perMessageDeflate: false,
       autoAcceptConnections: false,
-      maxReceivedFrameSize: 1000000, // 1M
-      maxReceivedMessageSize: 10000000, // 10M
+      maxPayload: 10000000, // 10M
+      verifyClient: (info, cb) => {
+        cb(true);
+        /*let token = info.req.headers.token;
+
+        if (!token) {
+          cb(false, 401, 'Unauthorized');
+        } else {
+          jwt.verify(token, secretKey, function (err, decoded) {
+            if (err) {
+              cb(false, 401, 'Unauthorized');
+            } else {
+              info.req.user = decoded;
+              cb(true);
+            }
+          })
+        }*/
+      }
     }, options);
 
     this.wss = new WebSocketServer(option);
@@ -23,8 +44,7 @@ class Server {
       done(null, {id});
     };
   
-    this.wss.on('request', (req) => {
-      let conn = req.accept(null, req.origin);
+    this.wss.on('connection', (conn) => {
       let so = new Socket(null, conn);
 
       // wait for authentication
@@ -44,7 +64,7 @@ class Server {
 
           so.setClientId(clientInfo.id);
           so.setClientInfo(clientInfo);
-          let pathname = req.resourceURL.pathname;
+          let pathname = url.parse(conn.upgradeReq.url).pathname;
           let ns = this.of(pathname);
           ns.addSocket(so);
           

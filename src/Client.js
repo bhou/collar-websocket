@@ -1,4 +1,4 @@
-const WebSocketClient = require('websocket').client;
+const WebSocketClient = require('ws');
 const Socket = require('./Socket');
 
 class Client {
@@ -21,7 +21,7 @@ class Client {
     this.retry = 0;
     this.enableRetry = true;
 
-    this.client = new WebSocketClient();
+    this.client = null;   // underlying client implementation
     this.listeners = new Map();
     this.socket = null;
 
@@ -33,7 +33,15 @@ class Client {
   }
 
   connect() {
-    this.client.on('connectFailed', (errorDescription) => {
+    this.client = null; // release previous client instance;
+    this.clientInfo = null;
+
+    this.client = new WebSocketClient(this.url, {
+      perMessageDeflate: false
+    });
+
+    this.client.on('error', (event) => {
+      // console.error('client error', event);
       this.connected = false;
 
       if (!this.enableRetry || this.retry >= this.maxRetry) {
@@ -42,22 +50,20 @@ class Client {
 
       if (this.retryCb) this.retryCb();
       setTimeout(() => {
-        this.retry++;
         this.doConnect();
       }, this.retryTimeout);
     });
 
-    this.client.on('connect', (conn) => {
+    this.client.on('open', () => {
       this.connected = true;
 
       if (!this.socket) {
-        this.socket = new Socket(this.clientId, conn);
+        this.socket = new Socket(this.clientId, this.client);
       } else {
-        this.socket.reset(this.clientId, conn);
+        this.socket.reset(this.clientId, this.client);
       }
 
       this.socket.on('authorized', (data) => {
-        this.retry = 0;
         if (this.authCb) this.authCb(this.socket);
         this.clientInfo = data;
       });
@@ -67,26 +73,24 @@ class Client {
         if (this.unauthCb) this.unauthCb();
       });
 
-      this.socket.on('close', (reasonCode, description) => {
+      this.socket.on('close', () => {
         this.connected = false;
         if (!this.enableRetry || this.retry >= this.maxRetry) {
           return;
         }
 
-        if (this.retryCb) this.retryCb();
         setTimeout(() => {
-          this.retry++;
+          if (this.retryCb) this.retryCb();
           this.doConnect();
         }, this.retryTimeout);
       });
 
+      // send authentication message
       this.emit('authentication', {
         clientId: this.clientId,
         clientSecret: this.clientSecret,
       });
     });
-
-    this.doConnect();
   }
 
   doConnect() {
@@ -94,7 +98,7 @@ class Client {
       return;
     }
     this.connected = false;
-    this.client.connect(this.url);
+    this.connect();
   }
 
   on(msg, listener) {

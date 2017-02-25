@@ -146,6 +146,7 @@ exports['test socket'] = {
     client.connect();
 
     setTimeout(() => {
+      client.toggleRetry(false);
       server.close(() => {
         test.ok(retry > 0);
         test.done();
@@ -185,6 +186,7 @@ exports['test socket'] = {
     client.connect();
 
     setTimeout(() => {
+      client.toggleRetry(false);
       server.close(() => {
         test.ok(retry > 0);
         test.done();

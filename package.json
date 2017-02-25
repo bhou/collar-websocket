@@ -1,6 +1,6 @@
 {
   "name": "collar-websocket",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "websocket for collarjs",
   "main": "./lib/index.js",
   "scripts": {
@@ -23,7 +23,9 @@
   "homepage": "https://github.com/bhou/collar-websocket#readme",
   "dependencies": {
     "eventemitter3": "^2.0.2",
-    "websocket": "^1.0.24"
+    "jsonwebtoken": "^7.3.0",
+    "websocket": "^1.0.24",
+    "ws": "^2.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.22.2",
@@ -32,5 +34,5 @@
     "babel-preset-es2015": "^6.22.0",
     "express": "^4.14.0",
     "nodeunit": "^0.10.2"
-  } 
+  }
 }
